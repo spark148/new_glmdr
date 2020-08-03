@@ -8,7 +8,7 @@ This is the research work in the glmdr, which deals with the case when the canon
 2. my_inference.R: revised inference() function. Currently only support for the logistic regression case (including Bradley-Terry model).
 3. inference_diff.R: to better compare the inference function between original and current one. In the history tab, we can see where the changes happened in the unifed/split view.
 
-__&nbsp;\* glmdr() function is the same (no change).__
+__\* glmdr() function is the same (no change).__
 
 
 ## Order to run:
