@@ -1,0 +1,524 @@
+---
+title: "Some computational and methodological notes on complete separation"
+author: "Daniel J. Eck"
+date: "6/13/2020"
+output: pdf_document
+header-includes: 
+ - \usepackage{amsthm}
+ - \usepackage{amsmath}
+ - \usepackage{amsfonts}
+ - \usepackage{amscd}
+ - \usepackage{amssymb}
+ - \usepackage[sectionbib]{natbib}
+ - \usepackage{url}
+ - \usepackage{graphicx,times}
+ - \usepackage{array,epsfig,fancyheadings,rotating}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+In this document we investigate some computational and methodological issues related to the complete separation issue in logistic regression specifically, and the canonical parameter estimated to be on the boundary problem generally.
+
+The following references proposed an inferential solution to this boundary problem through the lens of maximum likelihood estimation:  
+
+1. Computationally efficient likelihood inference in exponential families when the maximum likelihood estimator does not exist by Daniel J. Eck and Charles J. Geyer ([see here](https://www.researchgate.net/publication/324150941_Computationally_efficient_likelihood_inference_in_exponential_families_when_the_maximum_likelihood_estimator_does_not_exist))   
+
+2. Supporting Theory and Data Analysis for "Likelihood Inference in Exponential Families and Directions of Recession" by Charles J. Geyer ([see here](http://www.stat.umn.edu/geyer/gdor/phaseTR.pdf))   
+
+
+Projects in this area include but are not limited to:
+
+1. **Comparing methods.** The above references are great and all, but they have not been compared and contrasted to existing "solutions" that appear in the literature. In addition, the framework in these references is theoretical, hard to read, hard to understand, and, although software exists, our implementation is currently small in scope and has not been extensively tested in the same vein of existing "solutions". 
+
+I write existing "solutions" with solutions in quotes because, in my opinion, these existing "solutions" are more of work arounds than actual solutions. For example, when one fits a logistic regression model in classical settings $(n > p$ or $n \gg p)$ that exhibited no separation problems, then one not has no reason to consider solutions to separation when separation isn't observed. Instead, one would proceed with interpreting the model output. However, when one encounters separation the game has changed, parameter estimates are on the boundary and the original logistic model is "broken" or degenerate without obvious remedies. To remedy this problem people invented approaches which retrospectively change the assumed modeling paradigm or add data in clever ways. Our philosophy is that nothing new is wrong with the modeling paradigm in the presence of separation, the problem is with observed data that is allowable under the model in a finite sample. Consistent with this philosophy, our remedy stays within the context original model and does not alter the observed data in any way. Note that this discussion can not definitively say which approaches or philospophies are better, but we emphasize that a formal comparison between methods is needed.  
+
+2. **Canonical parameter confidence intervals and predictions.** Our software implementation [\texttt{glmdr}](https://github.com/cjgeyer/glmdr) currently only provides inference for mean-valued parameters (the response of a generalized linear regression model). It would be nice to be able to expand this framework to include inference about canonical parameter estimates (the regression coefficient vectors). It would also be nice to include prediction. We currently do not provide inferences for predicted values at new data points in a regression model that is fit to data that exhibits separation. Both confidence intervals for canonical parameter estimates and a sensible methodology for making valid predictions would be useful. Some of the work on confidence intervals for canonical parameter estimates [has begun with Charlie Geyer's course notes](http://www.stat.umn.edu/geyer/8931expfam/infinity.pdf).
+
+3. **Expand \texttt{glmdr}.** This project overlaps with the above project and also includes fixing some current issues with functionality in the \texttt{glmdr} package. These current issues are discussed in this document.
+
+
+4. **Propensity score estimation.** Propensity score estimation (estimating mean-values) using a logistic regression model has a lot of usefulness in causal inference. Separation of the data can render this endeavor useless, because the estimated propensity score can be 0 or 1 when separation exists which is problematic. For an example of this problem [see here for some intuition behind inverse probability weighting](http://www.rebeccabarter.com/blog/2017-07-05-ip-weighting/). [See here for a more formal discussion](https://static1.squarespace.com/static/58daa11a6b8f5bca8f8b62fa/t/59cf555532601e11ca58c5a4/1506760022523/Thoemmes.Ong.2016.pdf).
+
+
+
+# A brief list of methods that handle separation
+
+We load in the following software packages:
+
+```{r, warning=FALSE, message=FALSE}
+rm(list = ls())
+
+## Eck and Geyer's implementation
+library(glmdr) 
+
+## Functions to accompany A. Gelman and J. Hill, 
+##Data Analysis Using Regression and Multilevel/Hierarchical Models, 
+## Cambridge University Press, 2007.
+library(arm)
+
+## logistf: Firth's Bias-Reduced Logistic Regression
+library(logistf)
+
+## brglm2: Bias Reduction in Generalized Linear Models
+library(brglm2)
+```
+
+Here are some notes from the above implementations
+
+1. [glmdr](https://github.com/cjgeyer/glmdr): Right now only the fitting function (glmdr) and its corresponding summary methods work. The name stands for "generalized linear models done right", where "done right" means it correctly handles cases where the maximum likelihood estimate (MLE) does not exist in the conventional sense. Only does discrete generalized linear models and only those that are exponential family (because only exponential families have good theory about existence of MLE). Also does log-linear models for contingency tables and multinomial logistic regression, which it handles as conditional distributions of Poisson regression. It provides valid hypothesis tests and confidence intervals even when the MLE are "at infinity" in terms of canonical parameters or "on the boundary" in terms of mean value parameters
+
+2. [arm](https://cran.r-project.org/web/packages/arm/index.html): Functions to accompany A. Gelman and J. Hill, Data Analysis Using Regression and Multilevel/Hierarchical Models, Cambridge University Press, 2007. See the function 'bayesglm': Bayesian functions for generalized linear modeling with independent normal, t, or Cauchy prior distribution for the coefficients. [See the accompanying paper for more details](http://www.stat.columbia.edu/~gelman/research/published/priors11.pdf). 
+
+3. [brglm2](https://cran.r-project.org/web/packages/brglm2/index.html): Estimation and inference from generalized linear models based on various methods for bias reduction and maximum penalized likelihood with powers of the Jeffreys prior as penalty. The 'brglmFit' fitting method can achieve reduction of estimation bias by solving either the mean bias-reducing adjusted score equations in Firth (1993) <doi:10.1093/biomet/80.1.27> and Kosmidis and Firth (2009) <doi:10.1093/biomet/asp055>, or the median bias-reduction adjusted score equations in Kenne et al. (2016) <arXiv:1604.04768>, or through the direct subtraction of an estimate of the bias of the maximum likelihood estimator from the maximum likelihood estimates as in Cordeiro and McCullagh (1991) <http://www.jstor.org/stable/2345592>. See Kosmidis et al (2019) <doi:10.1007/s11222-019-09860-6> for more details. Estimation in all cases takes place via a quasi Fisher scoring algorithm, and S3 methods for the construction of of confidence intervals for the reduced-bias estimates are provided. In the special case of generalized linear models for binomial and multinomial responses (both ordinal and nominal), the adjusted score approaches return estimates with improved frequentist properties, that are also always finite, even in cases where the maximum likelihood estimates are infinite (e.g. complete and quasi-complete separation). 'brglm2' also provides pre-fit and post-fit methods for detecting separation and infinite maximum likelihood estimates in binomial response generalized linear models
+
+4. [logistf](https://cran.r-project.org/web/packages/logistf/index.html): Fit a logistic regression model using Firth's bias reduction method, equivalent to penalization of the log-likelihood by the Jeffreys prior. Confidence intervals for regression coefficients can be computed by penalized profile likelihood. Firth's method was proposed as ideal solution to the problem of separation in logistic regression. If needed, the bias reduction can be turned off such that ordinary maximum likelihood logistic regression is obtained.
+
+
+# Initial study: Our method works in mean-value parameter inference settings 
+
+In this study we show that our (Eck and Geyer) methodology works well when inference about mean-valued parameters (success proportion in logistic regression) is desired. Our methodology **currently** only seems to works well when the separation is not the result of one explanatory variable in the presence of others. We present two examples favoring our method and one example that illustrates where improvements are needed.
+
+## Example 1 (method works): logistic regression example
+
+In this example, we show that our model-based solution to the complete separation problem works, and that it provides narrower confidence intervals than competing methods. The data is constructed below. This data exhibits complete separation and \texttt{glm} provides a useless error message.
+
+```{r}
+x <- 1:30
+y <- c(rep(0, 12), rep(1, 11), rep(0, 7))
+out1 <- glm(y ~ x + I(x^2), family = binomial, x = TRUE)
+summary(out1)
+```
+
+Our \texttt{glmdr} software can fit this model correctly and it provides the user with an informative description of what happened.
+
+```{r glmdrlogist1, cache = TRUE}
+dat <- data.frame(y = y, x = x)
+out2 <- glmdr(y ~ x + I(x^2), family = "binomial", data = dat) #, maxit = 5e3)
+summary(out2)
+M <- out2$modmat
+
+## inference for estimated parameters; 
+## one-sided mean value-parameter CIs when on the boundary
+mus_CI <- inference(out2)
+mus_CI
+```
+
+
+We now fit using the defaults of the \texttt{bayesglm} function \texttt{arm} package.
+
+```{r}
+## fit using bayesglm 
+out3 <- bayesglm (y ~ x + I(x^2), family=binomial(link="logit"))
+display (out3)
+```
+
+Our method produces smaller confidence intervals than the defaults in \texttt{bayesglm}.
+
+```{r}
+canon_out3 <- predict(out3, type = "link", se.fit = TRUE)
+lwr_out3 <- canon_out3$fit - 1.96 * canon_out3$se.fit
+upr_out3 <- canon_out3$fit + 1.96 * canon_out3$se.fit
+mus_CI_out3 <- cbind(invlogit(lwr_out3), invlogit(upr_out3))
+
+## total length of our CIs
+sum(as.matrix(mus_CI) %*% c(-1,1))
+
+## total length of bayesglm CIs
+sum(as.matrix(mus_CI_out3) %*% c(-1,1))
+```
+
+<!--
+```{r}
+par(mfrow = c(1,2), mar = c(5, 4, 1, 1) + 0.1)
+plot(x, y, ylim = c(0,1), ylab = "mean of y", pch = 16)
+points(x, mus_CI_out3[, 1])
+points(x, mus_CI_out3[, 2])
+segments(x, mus_CI_out3[, 1], x, mus_CI_out3[, 2])
+
+plot(x, y, ylim = c(0,1), pch = 16, ylab = "")
+points(x, mus_CI[, 1])
+points(x, mus_CI[, 2])
+segments(x, mus_CI[, 1], x, mus_CI[, 2])
+```
+-->
+
+We now fit using various defaults of the \texttt{brglmFit} fitting method. See their help page for more details.
+
+
+```{r}
+## fit using brglmFit function; 
+## summary calls are ignored
+out4 <- glm(y ~ x + I(x^2), family=binomial(link="logit"))
+out4_AS_mixed <- update(out4, method = "brglmFit", type = "AS_mixed")
+out4_AS_mean <- update(out4, method = "brglmFit", type = "AS_mean")
+out4_AS_median <- update(out4, method = "brglmFit", type = "AS_median")
+out4_AS_MPL_Jeffreys <- update(out4, method = "brglmFit", type = "MPL_Jeffreys")
+out4_AS_correction <- update(out4, method = "brglmFit", type = "correction")
+```
+
+Our method produces smaller confidence intervals than any of the \texttt{brglmFit} fitting methods.
+
+
+```{r}
+## AS_mixed fit: the mixed bias-reducing score adjustments 
+## in Kosmidis et al (2019)
+canon_out4_AS_mixed <- predict(out4_AS_mixed, type = "link", se.fit = TRUE)
+lwr_out4_AS_mixed <- canon_out4_AS_mixed$fit - 1.96 * canon_out4_AS_mixed$se.fit
+upr_out4_AS_mixed <- canon_out4_AS_mixed$fit + 1.96 * canon_out4_AS_mixed$se.fit
+mus_CI_out4_AS_mixed <- 
+  cbind(invlogit(lwr_out4_AS_mixed), invlogit(upr_out4_AS_mixed))
+sum(as.matrix(mus_CI) %*% c(-1,1))
+sum(as.matrix(mus_CI_out4_AS_mixed) %*% c(-1,1))
+
+## AS_mean fit: the mean bias-reducing score adjustments 
+## in Firth, 1993 and Kosmidis & Firth, 2009.
+canon_out4_AS_mean <- predict(out4_AS_mean, type = "link", se.fit = TRUE)
+lwr_out4_AS_mean <- canon_out4_AS_mean$fit - 1.96 * canon_out4_AS_mean$se.fit
+upr_out4_AS_mean <- canon_out4_AS_mean$fit + 1.96 * canon_out4_AS_mean$se.fit
+mus_CI_out4_AS_mean <- 
+  cbind(invlogit(lwr_out4_AS_mean), invlogit(upr_out4_AS_mean))
+sum(as.matrix(mus_CI) %*% c(-1,1))
+sum(as.matrix(mus_CI_out4_AS_mean) %*% c(-1,1))
+
+## AS_median fit: the median-bias reducing score adjustments 
+## in Kenne Pagui et al. (2017)
+canon_out4_AS_median <- predict(out4_AS_median, type = "link", se.fit = TRUE)
+lwr_out4_AS_median <- canon_out4_AS_median$fit - 1.96 * canon_out4_AS_median$se.fit
+upr_out4_AS_median <- canon_out4_AS_median$fit + 1.96 * canon_out4_AS_median$se.fit
+mus_CI_out4_AS_median <- 
+  cbind(invlogit(lwr_out4_AS_median), invlogit(upr_out4_AS_median))
+sum(as.matrix(mus_CI) %*% c(-1,1))
+sum(as.matrix(mus_CI_out4_AS_median) %*% c(-1,1))
+
+## AS_MPL_Jeffreys fit: maximum penalized likelihood 
+## with powers of the Jeffreys prior as penalty.
+canon_out4_AS_MPL_Jeffreys <- predict(out4_AS_MPL_Jeffreys, type = "link", se.fit = TRUE)
+lwr_out4_AS_MPL_Jeffreys <- canon_out4_AS_MPL_Jeffreys$fit - 1.96 * canon_out4_AS_MPL_Jeffreys$se.fit
+upr_out4_AS_MPL_Jeffreys <- canon_out4_AS_MPL_Jeffreys$fit + 1.96 * canon_out4_AS_MPL_Jeffreys$se.fit
+mus_CI_out4_AS_MPL_Jeffreys <- 
+  cbind(invlogit(lwr_out4_AS_MPL_Jeffreys), invlogit(upr_out4_AS_MPL_Jeffreys))
+sum(as.matrix(mus_CI) %*% c(-1,1))
+sum(as.matrix(mus_CI_out4_AS_MPL_Jeffreys) %*% c(-1,1))
+
+## AS_correction fit: maximum penalized likelihood 
+## with powers of the Jeffreys prior as penalty.
+## does not fit
+#canon_out4_AS_correction <- predict(out4_AS_correction, type = "link", se.fit = TRUE)
+#lwr_out4_AS_correction <- canon_out4_AS_correction$fit - 1.96 * canon_out4_AS_correction$se.fit
+#upr_out4_AS_correction <- canon_out4_AS_correction$fit + 1.96 * canon_out4_AS_correction$se.fit
+#mus_CI_out4_AS_correction <- 
+#  cbind(invlogit(lwr_out4_AS_correction), invlogit(upr_out4_AS_correction))
+#sum(as.matrix(mus_CI) %*% c(-1,1))
+#sum(as.matrix(mus_CI_out4_AS_correction) %*% c(-1,1))
+```
+
+We summarize these findings in the table below:
+
+```{r}
+cbind(c("glmdr","Bayesglm","AS_mixed","AS_mean","AS_median","AS_MPL_Jeffreys"), round(c(sum(as.matrix(mus_CI) %*% c(-1,1)), 
+  sum(as.matrix(mus_CI_out3) %*% c(-1,1)),
+  sum(as.matrix(mus_CI_out4_AS_mixed) %*% c(-1,1)),
+  sum(as.matrix(mus_CI_out4_AS_mean) %*% c(-1,1)),
+  sum(as.matrix(mus_CI_out4_AS_median) %*% c(-1,1)),
+  sum(as.matrix(mus_CI_out4_AS_MPL_Jeffreys) %*% c(-1,1))), 3))
+```
+
+
+We now fit using various defaults of the \texttt{logistf} function. 
+
+```{r}
+## fit using Firth's bias-reduced logistic regression
+out5 <- logistf(y ~ x + I(x^2), family=binomial(link="logit"))
+#summary(out5)
+#M %*% out5$coefficients
+```
+
+The functionality in \texttt{logistf} does not integrate easily to the mean-value parameterization. Therefore, we do not consider \texttt{logistf} past this point.
+
+We now visualize the different confidence intervals.
+
+```{r, eval = FALSE}
+par(mfrow = c(3,2), mar = c(5, 4, 1, 1) + 0.1)
+plot(x, y, ylim = c(0,1), pch = 16, main = "Our glmdr method", 
+     ylab = "", xlab = "")
+points(x, mus_CI[, 1])
+points(x, mus_CI[, 2])
+segments(x, mus_CI[, 1], x, mus_CI[, 2])
+
+plot(x, y, ylim = c(0,1), pch = 16, main = "bayesglm method",
+     ylab = "", xlab = "")
+points(x, mus_CI_out3[, 1])
+points(x, mus_CI_out3[, 2])
+segments(x, mus_CI_out3[, 1], x, mus_CI_out3[, 2])
+
+plot(x, y, ylim = c(0,1), pch = 16, main = "brglmFit; AS_mixed method", 
+     ylab = "", xlab = "")
+points(x, mus_CI_out4_AS_mean[, 1])
+points(x, mus_CI_out4_AS_mean[, 2])
+segments(x, mus_CI_out4_AS_mean[, 1], x, mus_CI_out4_AS_mean[, 2])
+
+plot(x, y, ylim = c(0,1), pch = 16, main = "brglmFit; AS_mean method",
+     ylab = "", xlab = "")
+points(x, mus_CI_out4_AS_mixed[, 1])
+points(x, mus_CI_out4_AS_mixed[, 2])
+segments(x, mus_CI_out4_AS_mixed[, 1], x, mus_CI_out4_AS_mixed[, 2])
+
+plot(x, y, ylim = c(0,1), pch = 16, main = "brglmFit; AS_median method", 
+     ylab = "", xlab = "")
+points(x, mus_CI_out4_AS_median[, 1])
+points(x, mus_CI_out4_AS_median[, 2])
+segments(x, mus_CI_out4_AS_median[, 1], x, mus_CI_out4_AS_median[, 2])
+
+plot(x, y, ylim = c(0,1), pch = 16, main = "brglmFit; MPL_Jeffreys method", 
+     ylab = "", xlab = "")
+points(x, mus_CI_out4_AS_MPL_Jeffreys[, 1])
+points(x, mus_CI_out4_AS_MPL_Jeffreys[, 2])
+segments(x, mus_CI_out4_AS_MPL_Jeffreys[, 1], 
+         x, mus_CI_out4_AS_MPL_Jeffreys[, 2])
+
+#plot(x, y, ylim = c(0,1), pch = 16, ylab = "", xlab = "")
+#points(x, mus_CI_out4_AS_correction[, 1])
+#points(x, mus_CI_out4_AS_correction[, 2])
+#segments(x, mus_CI_out4_AS_correction[, 1], 
+#         x, mus_CI_out4_AS_correction[, 2])
+```
+
+
+\newpage
+
+
+```{r, echo = FALSE, out.width= "15cm", out.height="50cm", fig.height="50cm"}
+## visualizations
+par(mfrow = c(3,2), mar = c(5, 4, 1, 1) + 0.1)
+plot(x, y, ylim = c(0,1), pch = 16, main = "Our glmdr method", 
+     ylab = "", xlab = "")
+points(x, mus_CI[, 1])
+points(x, mus_CI[, 2])
+segments(x, mus_CI[, 1], x, mus_CI[, 2])
+
+plot(x, y, ylim = c(0,1), pch = 16, main = "bayesglm method",
+     ylab = "", xlab = "")
+points(x, mus_CI_out3[, 1])
+points(x, mus_CI_out3[, 2])
+segments(x, mus_CI_out3[, 1], x, mus_CI_out3[, 2])
+
+plot(x, y, ylim = c(0,1), pch = 16, main = "brglmFit; AS_mixed method", 
+     ylab = "", xlab = "")
+points(x, mus_CI_out4_AS_mean[, 1])
+points(x, mus_CI_out4_AS_mean[, 2])
+segments(x, mus_CI_out4_AS_mean[, 1], x, mus_CI_out4_AS_mean[, 2])
+
+plot(x, y, ylim = c(0,1), pch = 16, main = "brglmFit; AS_mean method",
+     ylab = "", xlab = "")
+points(x, mus_CI_out4_AS_mixed[, 1])
+points(x, mus_CI_out4_AS_mixed[, 2])
+segments(x, mus_CI_out4_AS_mixed[, 1], x, mus_CI_out4_AS_mixed[, 2])
+
+plot(x, y, ylim = c(0,1), pch = 16, main = "brglmFit; AS_median method", 
+     ylab = "", xlab = "")
+points(x, mus_CI_out4_AS_median[, 1])
+points(x, mus_CI_out4_AS_median[, 2])
+segments(x, mus_CI_out4_AS_median[, 1], x, mus_CI_out4_AS_median[, 2])
+
+plot(x, y, ylim = c(0,1), pch = 16, main = "brglmFit; MPL_Jeffreys method", 
+     ylab = "", xlab = "")
+points(x, mus_CI_out4_AS_MPL_Jeffreys[, 1])
+points(x, mus_CI_out4_AS_MPL_Jeffreys[, 2])
+segments(x, mus_CI_out4_AS_MPL_Jeffreys[, 1], 
+         x, mus_CI_out4_AS_MPL_Jeffreys[, 2])
+```
+
+
+\newpage
+## Example 2 (method works): Poisson regression example
+
+Our method also works for Poisson regression. In this example, the regression model is not completely degenerate.
+
+```{r poissonfit, cache = TRUE}
+## Poisson regression example from exponential family paper
+data(catrec)
+gout <- glm(y ~ (v1 + v2 + v3 + v4 + v5 + v6 + v7)^3,
+              family = "poisson", data = catrec)
+gout2 <- glmdr(y ~ (v1 + v2 + v3 + v4 + v5 + v6 + v7)^3,
+              family = "poisson", data = catrec)
+mus_CI_catrec <- inference(gout2)
+mus_CI_catrec
+```
+
+We can see which indices of the response vector are constrained to be on the boundary of their support ($\hat{y} = 0$).
+
+```{r}
+linearity_catrec <- gout2$linearity
+which(!linearity_catrec)
+```
+
+We can see that our methodology produces smaller confidence intervals for the mean-value parameters than the competing methods.
+
+```{r glmdrpois2, cache = TRUE}
+gout3 <- bayesglm (y ~ (v1 + v2 + v3 + v4 + v5 + v6 + v7)^3,
+                   family = poisson(link="log"), data = catrec)
+#probs_out3 <- predict(out3, type = "response", se.fit = TRUE)
+
+canon_gout3 <- predict(gout3, type = "link", se.fit = TRUE)
+lwr_gout3 <- canon_gout3$fit - 1.96 * canon_gout3$se.fit
+upr_gout3 <- canon_gout3$fit + 1.96 * canon_gout3$se.fit
+mus_CI_gout3 <- cbind(exp(lwr_gout3), exp(upr_gout3))[!linearity_catrec, ]
+
+sum(as.matrix(mus_CI_catrec) %*% c(-1,1))
+sum(as.matrix(mus_CI_gout3) %*% c(-1,1))
+
+## fit using brglmFit function
+gout4 <- glm(y ~ (v1 + v2 + v3 + v4 + v5 + v6 + v7)^3, 
+             family = poisson(link="log"), data = catrec)
+gout4_AS_mixed <- update(gout4, method = "brglmFit", type = "AS_mixed")
+gout4_AS_mean <- update(gout4, method = "brglmFit", type = "AS_mean")
+gout4_AS_median <- update(gout4, method = "brglmFit", type = "AS_median")
+gout4_AS_MPL_Jeffreys <- update(gout4, method = "brglmFit", 
+                                type = "MPL_Jeffreys")
+
+## AS_mixed fit: the mixed bias-reducing score adjustments 
+## in Kosmidis et al (2019)
+canon_gout4_AS_mixed <- predict(gout4_AS_mixed, type = "link", se.fit = TRUE)
+lwr_gout4_AS_mixed <- canon_gout4_AS_mixed$fit - 1.96 * canon_gout4_AS_mixed$se.fit
+upr_gout4_AS_mixed <- canon_gout4_AS_mixed$fit + 1.96 * canon_gout4_AS_mixed$se.fit
+mus_CI_gout4_AS_mixed <- 
+  cbind(invlogit(lwr_gout4_AS_mixed), invlogit(upr_gout4_AS_mixed))
+sum(as.matrix(mus_CI_catrec) %*% c(-1,1))
+sum(as.matrix(mus_CI_gout4_AS_mixed[!linearity_catrec, ]) %*% c(-1,1))
+
+## AS_mean fit: the mean bias-reducing score adjustments 
+## in Firth, 1993 and Kosmidis & Firth, 2009.
+canon_gout4_AS_mean <- predict(gout4_AS_mean, type = "link", se.fit = TRUE)
+lwr_gout4_AS_mean <- canon_gout4_AS_mean$fit - 1.96 * canon_gout4_AS_mean$se.fit
+upr_gout4_AS_mean <- canon_gout4_AS_mean$fit + 1.96 * canon_gout4_AS_mean$se.fit
+mus_CI_gout4_AS_mean <- 
+  cbind(invlogit(lwr_gout4_AS_mean), invlogit(upr_gout4_AS_mean))
+sum(as.matrix(mus_CI_catrec) %*% c(-1,1))
+sum(as.matrix(mus_CI_gout4_AS_mean[!linearity_catrec, ]) %*% c(-1,1))
+
+## AS_median fit: the median-bias reducing score adjustments 
+## in Kenne Pagui et al. (2017)
+canon_gout4_AS_median <- predict(gout4_AS_median, type = "link", se.fit = TRUE)
+lwr_gout4_AS_median <- canon_gout4_AS_median$fit - 1.96 * canon_gout4_AS_median$se.fit
+upr_gout4_AS_median <- canon_gout4_AS_median$fit + 1.96 * canon_gout4_AS_median$se.fit
+mus_CI_gout4_AS_median <- 
+  cbind(invlogit(lwr_gout4_AS_median), invlogit(upr_gout4_AS_median))
+sum(as.matrix(mus_CI_catrec) %*% c(-1,1))
+sum(as.matrix(mus_CI_gout4_AS_median[!linearity_catrec, ]) %*% c(-1,1))
+
+## AS_MPL_Jeffreys fit: maximum penalized likelihood 
+## with powers of the Jeffreys prior as penalty.
+canon_gout4_AS_MPL_Jeffreys <- predict(gout4_AS_MPL_Jeffreys, type = "link", se.fit = TRUE)
+lwr_gout4_AS_MPL_Jeffreys <- canon_gout4_AS_MPL_Jeffreys$fit - 1.96 * canon_gout4_AS_MPL_Jeffreys$se.fit
+upr_gout4_AS_MPL_Jeffreys <- canon_gout4_AS_MPL_Jeffreys$fit + 1.96 * canon_gout4_AS_MPL_Jeffreys$se.fit
+mus_CI_gout4_AS_MPL_Jeffreys <- 
+  cbind(invlogit(lwr_gout4_AS_MPL_Jeffreys), invlogit(upr_gout4_AS_MPL_Jeffreys))
+sum(as.matrix(mus_CI_catrec) %*% c(-1,1))
+sum(as.matrix(mus_CI_gout4_AS_MPL_Jeffreys[!linearity_catrec, ]) %*% c(-1,1))
+```
+
+We summarize these findings in the table below:
+
+```{r}
+cbind(c("glmdr","Bayesglm","AS_mixed","AS_mean","AS_median","AS_MPL_Jeffreys"), round(c(sum(as.matrix(mus_CI_catrec) %*% c(-1,1)), 
+  sum(as.matrix(mus_CI_gout3) %*% c(-1,1)),
+  sum(as.matrix(mus_CI_gout4_AS_mixed) %*% c(-1,1)),
+  sum(as.matrix(mus_CI_gout4_AS_mean) %*% c(-1,1)),
+  sum(as.matrix(mus_CI_gout4_AS_median) %*% c(-1,1)),
+  sum(as.matrix(mus_CI_gout4_AS_MPL_Jeffreys) %*% c(-1,1))), 3))
+```
+
+
+\newpage
+## Example 3 (method does not work)
+
+This example shows a setting where \texttt{glmdr} does not seem to work well. In this example we see that the \texttt{inference} function in the \texttt{glmdr} package estimates mean-value parameters to be exactly on the boundary (the endpoints of the 95\% CI are essentially the same).
+
+```{r dataendo, cache = TRUE}
+data(endometrial)
+m_endo <- glm(HG ~., family = binomial(link = "logit"), 
+              data = endometrial)
+m_endo_glmdr <- glmdr(HG ~., family = "binomial", data = endometrial)
+mus_CI_endo <- inference(m_endo_glmdr)
+mus_CI_endo
+```
+
+This does matter even when we specify $\alpha$ to be very small. The following is worse, now there are NAs.
+
+```{r dataendo2, cache = TRUE}
+mus_CI_endo2 <- inference(m_endo_glmdr, alpha = 0.0001)
+mus_CI_endo2
+```
+
+The \texttt{inference} function does not appear to be working well in this example. I have looked into this example and think that the problem is due to our implementation in the \texttt{inference} function and not the \texttt{glmdr} fitting function. At the present moment, the problem seems to be caused by the existence of a unit null eigen vector in the Fisher Information matrix.
+
+```{r}
+nulls <- m_endo_glmdr$nulls
+round(nulls, 5)
+```
+
+This means that the separation is an artifact of separation in one of the predictor variables. The follow shows that the response is observed to be 1 whenever the predictor \texttt{NV} is 1.
+
+```{r}
+endometrial[!m_endo_glmdr$linearity, ]
+```
+
+Our methodology does not seem to work when this is the case.
+
+
+
+\newpage
+# ROC curves
+
+```{r, message=FALSE, warning=FALSE}
+library(pROC)
+foo <- roc(HG ~., data = endometrial)
+```
+
+
+```{r, echo = FALSE, out.width= "15cm", out.height="5cm", fig.height="6cm", message=FALSE, warning=FALSE}
+plot(foo$NV, ylim = c(0,1), main = "HG vs NV", sub = "separation variable")
+plot(foo$PI, ylim = c(0,1), main = "HG vs PI")
+plot(foo$EH, ylim = c(0,1), main = "HG vs EH")
+```
+
+
+
+
+\newpage
+# Deviance
+We investigate the deviance in models with complete separation. The deviance statistic is 
+\begin{align*}
+  D &= -2\sum_{i=1}^n\left[y_i\log\left(\frac{y_i}{\hat p_i}\right) + (1 - y_i)\log\left(\frac{1 - y_i}{1 -\hat p_i}\right)\right].
+\end{align*}
+Let $I$ denote the index set of the components of the response vector on which we condition the original model (OM) to get the limiting conditional model (LCM). Let $Y_I$ and $y_I$ denote the corresponding components of the response vector considered as a random vector and as an observed value, respectively.
+
+
+
+```{r}
+x <- 1:30
+y <- c(rep(0, 12), rep(1, 11), rep(0, 7))
+out1 <- glm(y ~ x + I(x^2), family = binomial, x = TRUE)
+summary(out1)
+```
+
+
+
+```{r}
+names(out1)
+out1$null.deviance
+out1$deviance
+p1 <- predict(out1, type = "response")
+```
+
+
+```{r}
+dat <- data.frame(y = y, x = x)
+out2 <- glmdr(y ~ x + I(x^2), family = "binomial", data = dat) #, maxit = 5e3)
+summary(out2)
+out2$linearity
+```
+
