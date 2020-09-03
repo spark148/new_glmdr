@@ -1,4 +1,4 @@
-# R package glmdr (Sep/03/2020)
+# R package glmdr (Aug/31/2020)
 
 ## Exponential Family Generalized Linear Models Done Right
 
