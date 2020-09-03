@@ -2,4 +2,4 @@
 
 This is the research work in the glmdr, which deals with the case when the canonical statistic(s) lie(s) on the boundary of its convex support.
 
-## will be updated by Sep 7th
+## README.md will be updated by Sep 7th
