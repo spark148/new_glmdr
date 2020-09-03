@@ -15,6 +15,8 @@ library(nloptr)
 
 ## Illustrative Example 
 
+[example 1; fitting, ploting, comparing]
+
 We show that our model-based solution to the complete separation problem works, and that it provides narrower confidence intervals than competing methods. The data is constructed below. This data exhibits complete separation and \code{glm} provides a useless error message.
 [Add more description].
 
