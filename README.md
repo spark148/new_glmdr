@@ -4,13 +4,13 @@
 
 In an exponential family generalized linear model (binomial, poisson, multinomial, and product multinomial response), the maximum likelihood estimate (MLE) does not exist in the conventional sense when solutions are "at infinity" (in terms of canonical parameters) or "on the boundary" (in terms of mean value parameters).
 Functions for doing valid hypothesis tests and confidence intervals even in "solutions at infinity" cases are included.
-    
+  
 ## Usage 
 
 ```r
 library(devtools)
-install_github(repo = "DEck13/complete_separation")
-library(nloptr)
+install_github(repo = "DEck13/complete_separation") #This would (?) be changed to the right path (e.g. cjgeyer/glmdr)
+library(glmdr)
 ```
 
 ## Illustrative Example 
