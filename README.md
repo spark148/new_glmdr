@@ -2,7 +2,7 @@
 
 ## Exponential Family Generalized Linear Models Done Right
 
-In the generalized linear model, the maximum likelihood estimate (MLE) does not exist in the conventional sense when solutions are "at infinity" in terms of canonical parameters or "on the boundary" in terms of mean value parameters. The glmdr handles this case for the full discrete exponential families generalized linear models (binomial, poisson, multinomial, and product multinomial response). It provides valid hypothesis tests, confidence intervals and its corresponding summary. 
+In the generalized linear model, the maximum likelihood estimate (MLE) does not exist in the conventional sense when solutions are "at infinity" in terms of canonical parameters or "on the boundary" in terms of mean value parameters. The `glmdr` deals with this case for the full discrete exponential families generalized linear models (binomial, Poisson, multinomial, and product multinomial response). It provides valid hypothesis tests, confidence intervals and its corresponding summary. 
   
 ## Usage 
 
@@ -14,42 +14,36 @@ library(glmdr)
 
 ## Illustrative Example 
 
-Example 1: Completely Degenerate Logistic Regression
+We provide our model-based solution to the completely degenerate logistic regression example. The data looks like below. 
 
-We show that our model-based solution to the complete separation problem works, and that it provides narrower confidence intervals than competing methods. 
-The data is constructed below. 
+<p align="center"><img src="./glmdr_example_dat.png" width=70%></div></p>
 
-![Plot of quadratic](glmdr_example_dat.png)
-
-This data exhibits complete separation and \code{glm} provides a useless error message.
-[Add more description].
+This data exhibits a complete separation and `glm` fails to provide useful information with error messages.
+Specifically, MLE in the Barndorff-Nielsen completion is completely degenerate and this model does not have identifiable parameters.
+Yet, we can still make a valid inference with one-sided confidence intervals for mean value parameters.
 
 ```r
+data(quadratic)
 attach(quadratic)
 glmdr_out <- glmdr(y ~ x + I(x^2),  family="binomial")
 summary(glmdr_out)
-glmdr_out_inf <- inference(glmdr_out)
+glmdr_out_inf <- inference(glmdr_out, alpha =0.05)
 glmdr_out_inf
 ```
 
+Based on the confidence intervals, we can make a plot:
 
-[Add description]
 ```r
 plot(x, y, ylim = c(0,1), pch = 16, ylab = "", xlab = "")
 points(x, glmdr_out_inf[, 1])
 points(x, glmdr_out_inf[, 2])
 segments(x, glmdr_out_inf[, 1], x, glmdr_out_inf[, 2])
+detach(quadratic)
 ```
 
-![Plot of confidence interval from glmdr](glmdr_example_1.png)
+<p align="center"><img src="./glmdr_example_1.png" width=71%></p>
 
-
-
-To cite this package:
-```r
-citation("glmdr")
-```
-
+This plot represents one-sided 95% confidence intervals for mean value parameters. Black dots are the observed data, white dots are either upper or lower bound of the intervals and bars are the intervals. Horizontal axis shows the predictor value and vertical axis is the probability of observing response value = 1 at the corresponding predictor value.
 
 ## Further details
 
@@ -70,3 +64,11 @@ For more details, please see:
   Computationally efficient likelihood inference in exponential families when the maximum likelihood estimator does not exist.
   
   https://arxiv.org/abs/1803.11240.
+
+## Citation
+
+To cite this package:
+```r
+citation("glmdr")
+```
+
