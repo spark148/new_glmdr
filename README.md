@@ -23,6 +23,7 @@ Specifically, MLE in the Barndorff-Nielsen completion is completely degenerate a
 Yet, we can still make a valid inference with one-sided confidence intervals for mean value parameters.
 
 ```r
+data(quadratic)
 attach(quadratic)
 glmdr_out <- glmdr(y ~ x + I(x^2),  family="binomial")
 summary(glmdr_out)
