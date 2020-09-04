@@ -2,8 +2,7 @@
 
 ## Exponential Family Generalized Linear Models Done Right
 
-In an exponential family generalized linear model (binomial, poisson, multinomial, and product multinomial response), the maximum likelihood estimate (MLE) does not exist in the conventional sense when solutions are "at infinity" (in terms of canonical parameters) or "on the boundary" (in terms of mean value parameters).
-Functions for doing valid hypothesis tests and confidence intervals even in "solutions at infinity" cases are included.
+In the generalized linear model, the maximum likelihood estimate (MLE) does not exist in the conventional sense when solutions are "at infinity" in terms of canonical parameters or "on the boundary" in terms of mean value parameters. The glmdr handles this case for the full discrete exponential families generalized linear models (binomial, poisson, multinomial, and product multinomial response). It provides valid hypothesis tests, confidence intervals and its corresponding summary. 
   
 ## Usage 
 
@@ -15,9 +14,14 @@ library(glmdr)
 
 ## Illustrative Example 
 
-[example 1; fitting, ploting, comparing]
+Example 1: Completely Degenerate Logistic Regression
 
-We show that our model-based solution to the complete separation problem works, and that it provides narrower confidence intervals than competing methods. The data is constructed below. This data exhibits complete separation and \code{glm} provides a useless error message.
+We show that our model-based solution to the complete separation problem works, and that it provides narrower confidence intervals than competing methods. 
+The data is constructed below. 
+
+![Plot of quadratic](glmdr_example_dat.png)
+
+This data exhibits complete separation and \code{glm} provides a useless error message.
 [Add more description].
 
 ```r
@@ -49,7 +53,20 @@ citation("glmdr")
 
 ## Further details
 
-For more details, see:
+For more details, please see:
 
-  Eck, D.J. and Charles J. Geyer (2020+)
+  Geyer, C.J. (2009)
+  
+  Likelihood inference in exponential families and directions of recession.
+
+  Electronic Journal of Statistics, 3, 259-289.
+
+  http://projecteuclid.org/euclid.ejs/1239716414.
+  
+<br>
+
+  Eck, D.J. and Geyer, C.J. (submitted)
+  
   Computationally efficient likelihood inference in exponential families when the maximum likelihood estimator does not exist.
+  
+  https://arxiv.org/abs/1803.11240.
