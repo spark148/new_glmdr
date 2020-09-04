@@ -2,7 +2,7 @@
 
 ## Exponential Family Generalized Linear Models Done Right
 
-In the generalized linear model, the maximum likelihood estimate (MLE) does not exist in the conventional sense when solutions are "at infinity" in terms of canonical parameters or "on the boundary" in terms of mean value parameters. The glmdr handles this case for the full discrete exponential families generalized linear models (binomial, poisson, multinomial, and product multinomial response). It provides valid hypothesis tests, confidence intervals and its corresponding summary. 
+In the generalized linear model, the maximum likelihood estimate (MLE) does not exist in the conventional sense when solutions are "at infinity" in terms of canonical parameters or "on the boundary" in terms of mean value parameters. The glmdr deals with this case for the full discrete exponential families generalized linear models (binomial, poisson, multinomial, and product multinomial response). It provides valid hypothesis tests, confidence intervals and its corresponding summary. 
   
 ## Usage 
 
