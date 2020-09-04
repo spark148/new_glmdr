@@ -14,15 +14,13 @@ library(glmdr)
 
 ## Illustrative Example 
 
-Example 1: Completely Degenerate Logistic Regression
-
-We show that our model-based solution to the complete separation problem works, and that it provides narrower confidence intervals than competing methods. 
-The data is constructed below. 
+We provide our model-based solution to the completely degenerate logistic regression example. The data looks like below. 
 
 ![Plot of quadratic](glmdr_example_dat.png)
 
-This data exhibits complete separation and \code{glm} provides a useless error message.
-[Add more description].
+This data exhibits a complete separation and `glm` fails to provide useful information with error messages.
+Specifically, MLE in the Barndorff-Nielsen completion is completely degenerate and this model has no identifiable parameters.
+Yet, we can still make a valid inference using one-sided confidence interval for mean value paraemters.
 
 ```r
 attach(quadratic)
@@ -32,8 +30,8 @@ glmdr_out_inf <- inference(glmdr_out)
 glmdr_out_inf
 ```
 
+One-sided 95% confidence intervals for mean value parameters. Bars are the intervals. Vertical axis is the probability of observing response value one when the predictor value is x. Solid dots are the observed data.
 
-[Add description]
 ```r
 plot(x, y, ylim = c(0,1), pch = 16, ylab = "", xlab = "")
 points(x, glmdr_out_inf[, 1])
@@ -42,7 +40,6 @@ segments(x, glmdr_out_inf[, 1], x, glmdr_out_inf[, 2])
 ```
 
 ![Plot of confidence interval from glmdr](glmdr_example_1.png)
-
 
 
 To cite this package:
