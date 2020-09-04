@@ -16,21 +16,21 @@ library(glmdr)
 
 We provide our model-based solution to the completely degenerate logistic regression example. The data looks like below. 
 
-<div style="text-align:center"><img src="./glmdr_example_dat.png" width=70%></div>
+<p align="center"><img src="./glmdr_example_dat.png" width=70%></div></p>
 
 This data exhibits a complete separation and `glm` fails to provide useful information with error messages.
-Specifically, MLE in the Barndorff-Nielsen completion is completely degenerate and this model has no identifiable parameters.
-Yet, we can still make a valid inference using one-sided confidence interval for mean value paraemters.
+Specifically, MLE in the Barndorff-Nielsen completion is completely degenerate and this model does not have identifiable parameters.
+Yet, we can still make a valid inference with one-sided confidence intervals for mean value paraemters.
 
 ```r
 attach(quadratic)
 glmdr_out <- glmdr(y ~ x + I(x^2),  family="binomial")
 summary(glmdr_out)
-glmdr_out_inf <- inference(glmdr_out)
+glmdr_out_inf <- inference(glmdr_out, alpha =0.05)
 glmdr_out_inf
 ```
 
-One-sided 95% confidence intervals for mean value parameters. Bars are the intervals. Vertical axis is the probability of observing response value one when the predictor value is x. Solid dots are the observed data.
+Based on the confidence intervals, we can make a plot:
 
 ```r
 plot(x, y, ylim = c(0,1), pch = 16, ylab = "", xlab = "")
@@ -39,13 +39,9 @@ points(x, glmdr_out_inf[, 2])
 segments(x, glmdr_out_inf[, 1], x, glmdr_out_inf[, 2])
 ```
 
-<div style="text-align:center"><img src="./glmdr_example_1.png" width=75%></div>
+<p align="center"><img src="./glmdr_example_1.png" width=71%></p>
 
-To cite this package:
-```r
-citation("glmdr")
-```
-
+This plot represents one-sided 95% confidence intervals for mean value parameters. Balck dots are the observed data, white dots are either upper or lower bound of the intervals and bars are the intervals. Horizontal axis shows the predictor value and vertical axis is the probability of observing response value = 1 at the corresponding predictor value.
 
 ## Further details
 
@@ -66,3 +62,11 @@ For more details, please see:
   Computationally efficient likelihood inference in exponential families when the maximum likelihood estimator does not exist.
   
   https://arxiv.org/abs/1803.11240.
+
+## Citation
+
+To cite this package:
+```r
+citation("glmdr")
+```
+
