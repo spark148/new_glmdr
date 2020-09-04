@@ -8,7 +8,7 @@ ifelse2 <-function(cond,a,b){
 b_obj_cond_chker <- function(xi,k,nulls,modmat,linearity){
   #Input:  model parameters (xi to be optimized, k-th element, null matrix, model matrix, boolean vector of linearity)
   #Output: True / False
-  #Description: In logistic regression, check the necessary (prerequisite) conditions in nloptr.
+  #Description: check the necessary (prerequisite) conditions for objective function in nloptr.
   ifelse(is.numeric(xi),TRUE,FALSE) |ifelse(is.finite(xi),TRUE,FALSE) |
     ifelse(length(xi) == ncol(nulls),TRUE,FALSE) |ifelse(is.numeric(k),TRUE,FALSE) |
     ifelse(is.finite(k),TRUE,FALSE) | ifelse(length(k) == 1,TRUE,FALSE) |
@@ -18,7 +18,7 @@ b_obj_cond_chker <- function(xi,k,nulls,modmat,linearity){
 b_hin_cond_chker <- function(xi, alpha, nulls){
   #Input:  model parameters
   #Output: True / False
-  #Description: In logistic regression, check the necessary (prerequisite) conditions in nloptr.
+  #Description: check the necessary (prerequisite) conditions for constraints in nloptr.
   ifelse(is.numeric(xi),TRUE,FALSE) | ifelse(is.finite(xi),TRUE,FALSE) |
     ifelse(length(xi) == ncol(nulls),TRUE,FALSE) | ifelse(is.numeric(alpha),TRUE,FALSE) |
     ifelse(length(alpha) == 1,TRUE,FALSE) |ifelse(0 < alpha && alpha < 1,TRUE,FALSE)
