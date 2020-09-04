@@ -38,6 +38,7 @@ plot(x, y, ylim = c(0,1), pch = 16, ylab = "", xlab = "")
 points(x, glmdr_out_inf[, 1])
 points(x, glmdr_out_inf[, 2])
 segments(x, glmdr_out_inf[, 1], x, glmdr_out_inf[, 2])
+detach(quadratic)
 ```
 
 <p align="center"><img src="./glmdr_example_1.png" width=71%></p>
