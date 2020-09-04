@@ -16,7 +16,7 @@ library(glmdr)
 
 We provide our model-based solution to the completely degenerate logistic regression example. The data looks like below. 
 
-<img src="./glmdr_example_dat.png" width=70%>
+<div style="text-align:center"><img src="./glmdr_example_dat.png" width=70%></div>
 
 This data exhibits a complete separation and `glm` fails to provide useful information with error messages.
 Specifically, MLE in the Barndorff-Nielsen completion is completely degenerate and this model has no identifiable parameters.
@@ -39,7 +39,7 @@ points(x, glmdr_out_inf[, 2])
 segments(x, glmdr_out_inf[, 1], x, glmdr_out_inf[, 2])
 ```
 
-<img src="./glmdr_example_1.png" width=70%>
+<div style="text-align:center"><img src="./glmdr_example_1.png" width=75%></div>
 
 To cite this package:
 ```r
