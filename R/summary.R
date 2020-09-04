@@ -42,6 +42,8 @@
 #' same as if one had called \code{\link[stats]{glm}} with argument
 #' \code{subset} that produces this conditioning.}
 #' @seealso \code{\link{glmdr}, \link{glm}}, \code{\link{summary}}.
+#' @export
+#' @export summary.glmdr
 #' @examples
 #' ## For examples see example(glmdr)
 summary.glmdr <- function(object, correlation = FALSE, symbolic.cor = FALSE,

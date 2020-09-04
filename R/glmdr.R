@@ -201,6 +201,7 @@ newton <- function(beta, mlogl)
 #' the maximum likelihood estimate does not exist in the conventional sense.
 #' Log-linear models for categorical data analysis are also fit correctly
 #' by considering them as Poisson regression.
+#' @export glmdr
 #' @param formula an object of class \code{"\link{formula}"} (or one that 
 #' can be coerced to that class): a symbolic description of the
 #' model to be fitted. See \code{\link[stats]{glm}} and \code{\link[stats]{formula}} 

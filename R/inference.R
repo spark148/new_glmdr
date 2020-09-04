@@ -153,7 +153,7 @@ inference <- function(object, alpha = 0.05, eps=1e-10){
     bounds.lower.p <- 1 / (1 + exp(- bounds.lower.theta))
     bounds.upper.p <- 1 / (1 + exp(- bounds.upper.theta))
     CI <- ifelse2(model_type,data.frame(lower = max.rows * bounds.lower.p, upper = max.rows * bounds.upper.p),
-                  data.frame(lower = bounds.lower.p, upper = bounds.upper.p, bets=beta_val))
+                  data.frame(lower = bounds.lower.p, upper = bounds.upper.p))
     return(CI)
   }
   if (family == "poisson") {
