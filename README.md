@@ -9,6 +9,7 @@ In the generalized linear model, the maximum likelihood estimate (MLE) does not 
 ```r
 library(devtools)
 install_github(repo = "DEck13/complete_separation") #This would (?) be changed to the right path (e.g. cjgeyer/glmdr)
+library(nloptr)
 library(glmdr)
 ```
 
