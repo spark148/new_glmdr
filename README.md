@@ -2,7 +2,7 @@
 
 ## Exponential Family Generalized Linear Models Done Right
 
-In the generalized linear model, the maximum likelihood estimate (MLE) does not exist in the conventional sense when solutions are "at infinity" in terms of canonical parameters or "on the boundary" in terms of mean value parameters. The `glmdr` deals with this case for the full discrete exponential families generalized linear models (binomial, poisson, multinomial, and product multinomial response). It provides valid hypothesis tests, confidence intervals and its corresponding summary. 
+In the generalized linear model, the maximum likelihood estimate (MLE) does not exist in the conventional sense when solutions are "at infinity" in terms of canonical parameters or "on the boundary" in terms of mean value parameters. The `glmdr` deals with this case for the full discrete exponential families generalized linear models (binomial, Poisson, multinomial, and product multinomial response). It provides valid hypothesis tests, confidence intervals and its corresponding summary. 
   
 ## Usage 
 
@@ -20,7 +20,7 @@ We provide our model-based solution to the completely degenerate logistic regres
 
 This data exhibits a complete separation and `glm` fails to provide useful information with error messages.
 Specifically, MLE in the Barndorff-Nielsen completion is completely degenerate and this model does not have identifiable parameters.
-Yet, we can still make a valid inference with one-sided confidence intervals for mean value paraemters.
+Yet, we can still make a valid inference with one-sided confidence intervals for mean value parameters.
 
 ```r
 attach(quadratic)
@@ -41,7 +41,7 @@ segments(x, glmdr_out_inf[, 1], x, glmdr_out_inf[, 2])
 
 <p align="center"><img src="./glmdr_example_1.png" width=71%></p>
 
-This plot represents one-sided 95% confidence intervals for mean value parameters. Balck dots are the observed data, white dots are either upper or lower bound of the intervals and bars are the intervals. Horizontal axis shows the predictor value and vertical axis is the probability of observing response value = 1 at the corresponding predictor value.
+This plot represents one-sided 95% confidence intervals for mean value parameters. Black dots are the observed data, white dots are either upper or lower bound of the intervals and bars are the intervals. Horizontal axis shows the predictor value and vertical axis is the probability of observing response value = 1 at the corresponding predictor value.
 
 ## Further details
 
