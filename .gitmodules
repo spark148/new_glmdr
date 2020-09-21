@@ -1,3 +1,6 @@
 [submodule "manuscript/manuscript/Overleaf"]
 	path = manuscript/manuscript/Overleaf
 	url = https://git.overleaf.com/5f57eef045d91700015607e9
+[submodule "manuscript/Overleaf"]
+	path = manuscript/Overleaf
+	url = https://git.overleaf.com/5f57eef045d91700015607e9
