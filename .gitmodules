@@ -1,0 +1,3 @@
+[submodule "manuscript/Overleaf"]
+	path = manuscript/Overleaf
+	url = https://github.com/spark148/MLE-Research.git
