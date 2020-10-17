@@ -14,15 +14,15 @@ Final_Product$`Accesion N` <- str_split(Final_Product$Complete_name,":",simplify
 ### Final_Product - 1st sheet
 Heavy_Lfiting <- readxl::read_xlsx("./Kernel_Color_Data.xlsx",sheet=2, skip=1) # In the original data, 1st line is garbage value so we should skip.
 Heavy_Lfiting$`Accesion N` <- str_split(Heavy_Lfiting$Complete_name,":",simplify=TRUE)[,1]
-#head(sort(table(Heavy_Lfiting$`Accesion N`),decreasing=TRUE)) # 0
+#head(sort(table(Heavy_Lfiting$`Accesion N`),decreasing=TRUE)) 
 ### Final_Product - 1st sheet
 Genotype_data <- readxl::read_xlsx("./Kernel_Color_Data.xlsx",sheet=3)
 Genotype_data$`Accesion N` <- str_split(Genotype_data$Complete_name,":",simplify=TRUE)[,1]
-#head(sort(table(Genotype_data$`Accesion N`),decreasing=TRUE),10) # 0
+#head(sort(table(Genotype_data$`Accesion N`),decreasing=TRUE),10) 
 ### Final_Product - 1st sheet
 Phenotype_data <- readxl::read_xlsx("./Kernel_Color_Data.xlsx",sheet=4)
 Phenotype_data$`Accesion N` <- str_split(Phenotype_data$Complete_name,":",simplify=TRUE)[,1]
-#head(sort(table(Phenotype_data$`Accesion N`),decreasing=TRUE)) # 0
+#head(sort(table(Phenotype_data$`Accesion N`),decreasing=TRUE)) 
 
 # end of Imprting data
 
