@@ -42,8 +42,8 @@ Code_Phenotype <- inner_join(Code_dat,Phenotype_data,by="Accesion N")
 
 ## Validate
 sum(Code_dat$`Accesion N` %in% Final_Product$`Accesion N`) #Expected number of row for Code_Final_Product
-sum(Code_dat$`Accesion N` %in% Heavy_Lfiting$`Accesion N`) #Expected number of row for Code_Final_Product
-sum(Code_dat$`Accesion N` %in% Phenotype_data$`Accesion N`) #Expected number of row for Code_Final_Product
+sum(Code_dat$`Accesion N` %in% Heavy_Lfiting$`Accesion N`) #Expected number of row for Code_Heavy_Lfiting
+sum(Code_dat$`Accesion N` %in% Phenotype_data$`Accesion N`) #Expected number of row for Code_Phenotype_Data
 
 ## Export
 Code_Final_Product %>% openxlsx::write.xlsx("Combined_Final_Product.xlsx")
