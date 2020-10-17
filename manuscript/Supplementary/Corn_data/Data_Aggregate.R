@@ -22,8 +22,7 @@ Genotype_data$`Accesion N` <- str_split(Genotype_data$Complete_name,":",simplify
 ### Final_Product - 1st sheet
 Phenotype_data <- readxl::read_xlsx("./Kernel_Color_Data.xlsx",sheet=4)
 Phenotype_data$`Accesion N` <- str_split(Phenotype_data$Complete_name,":",simplify=TRUE)[,1]
-#head(sort(table(Phenotype_data$`Accesion N`),decreasing=TRUE)) 
-
+#head(sort(table(Phenotype_data$`Accesion N`),decreasing=TRUE))
 # end of Imprting data
 
 #Cross duplicated values
@@ -33,11 +32,20 @@ Code_Final <- Code_dup_lst[Code_dup_lst %in% Final_Product$`Accesion N`]
 Code_Heavy <- Code_dup_lst[Code_dup_lst %in% Heavy_Lfiting$`Accesion N`]
 Code_Genotype <- Code_dup_lst[Code_dup_lst %in% Genotype_data$`Accesion N`]
 Code_Phenotype <- Code_dup_lst[Code_dup_lst %in% Phenotype_data$`Accesion N`]
+#End of Cross duplicated values
 
+#Join, validate and Export
+## Join
 Code_Final_Product <- inner_join(Code_dat,Final_Product,by="Accesion N")
 Code_Heavy <- inner_join(Code_dat,Heavy_Lfiting,by="Accesion N")
 Code_Phenotype <- inner_join(Code_dat,Phenotype_data,by="Accesion N")
 
+## Validate
+sum(Code_dat$`Accesion N` %in% Final_Product$`Accesion N`) #Expected number of row for Code_Final_Product
+sum(Code_dat$`Accesion N` %in% Heavy_Lfiting$`Accesion N`) #Expected number of row for Code_Final_Product
+sum(Code_dat$`Accesion N` %in% Phenotype_data$`Accesion N`) #Expected number of row for Code_Final_Product
+
+## Export
 Code_Final_Product %>% openxlsx::write.xlsx("Combined_Final_Product.xlsx")
 Code_Heavy %>% openxlsx::write.xlsx("Combined_Heavy_Lfiting.xlsx")
 Code_Phenotype %>% openxlsx::write.xlsx("Combined_Phenotype_Data.xlsx")
